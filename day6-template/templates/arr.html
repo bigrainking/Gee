@@ -1,0 +1,12 @@
+<!-- templates/arr.tmpl -->
+<html>
+
+<body>
+    <!-- 获取title -->
+    <p>hello, {{.title}}</p>
+    <!-- 遍历student中每个学生，类似for index， ele := range stuArr -->
+    {{range $index, $ele := .stuArr }}
+    <p>{{ $index }}: {{ $ele.Name }} is {{ $ele.Age }} years old</p>
+    {{ end }}
+</body>
+</html>

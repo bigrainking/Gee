@@ -1,4 +1,4 @@
-package gee
+package geenote
 
 import (
 	"net/http"
@@ -70,9 +70,14 @@ func (r *router) handle(c *Context) {
 		//因为 c.Path是请求的具体路由= /p/python   n.patten是树中注册的动态路由
 		key := c.Method + "-" + node.pattern
 		// 2. 通过handlers路由表调用对应处理函数
-		r.handlers[key](c)
-	}
+		handler := r.handlers[key]
 
+		// 中间件执行部分
+		// 1. 将业务函数添加到handlers中
+		c.handlers = append(c.handlers, handler)
+		// 2. 调用Next ： 就应该放在这里，如果前缀树中找到了Req才执行c.Next
+		c.Next()
+	}
 }
 
 // 【parsePattern】路径解析

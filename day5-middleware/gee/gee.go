@@ -3,6 +3,8 @@ package gee
 import (
 	"log"
 	"net/http"
+	"strings"
+	"text/template"
 )
 
 type HandlerFunc func(c *Context)
@@ -26,6 +28,9 @@ type Engine struct {
 	*RouterGroup
 	// 包含所有子分组的功能
 	groups []*RouterGroup
+	// 模板相关
+	htmlTemplates *template.Template // for html render 文件夹中所有模板文件的集合：将所有的模板加载进内存
+	funcMap       template.FuncMap   // for html render 所有的自定义模板渲染函数。
 }
 
 // 【Engine构造函数:全局构造函数，创建一个实例】
@@ -67,6 +72,12 @@ func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
 	group.addRouter("POST", pattern, handler)
 }
 
+// 【中间件注册】
+func (group *RouterGroup) Use(h HandlerFunc) {
+	// 将中间件添加到group.middlerware中
+	group.middlewares = append(group.middlewares, h)
+}
+
 // 只有Engine才可以Run  Engine才是实现ServeHTTP的内容
 func (e *Engine) Run(addr string) error {
 	return http.ListenAndServe(addr, e)
@@ -74,10 +85,12 @@ func (e *Engine) Run(addr string) error {
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c := newContext(w, r)
-	// 插入点
-	// 允许用户使用自己定义的中间件做一些额外的处理，例如记录日志等，以及对Context进行二次加工。
+	// 找到r请求所在的group，将group里面的中间件都添加到Context.handlers中
+	for _, group := range e.groups {
+		// 通过比较RouterGroup与请求的前缀得到
+		if strings.HasPrefix(r.URL.Path, group.prefix) {
+			c.handlers = append(c.handlers, group.middlewares...) //将所有RouterGroup中的中间件拿出来
+		}
+	}
 	e.router.handle(c)
-	// 另外通过调用(*Context).Next()函数，
-	// 中间件可等待用户自己定义的 Handler处理结束后，再做一些额外的操作，例如计算本次处理所用时间等。
-	// 即 Gee 的中间件支持用户在请求被处理的前后，做一些额外的操作。
 }

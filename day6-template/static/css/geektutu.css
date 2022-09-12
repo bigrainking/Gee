@@ -1,0 +1,6 @@
+p {
+    color: orange;
+    font-weight: 700;
+    font-size: 20px;
+}
+/* 访问URL时，对应的handler会加载对应的tmpl,模板会让你访问/static/ 以此来加载出./static下面的css问阿金 */
